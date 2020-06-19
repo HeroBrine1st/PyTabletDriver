@@ -55,7 +55,10 @@ def main():
     print("System size: %sx%s" % tuple(tablet))
     print("Brought size: %sx%s" % bring_proportions(*tablet))
     print(area_pos, area_size)
-    for event in device.read_loop():
+    while True:
+        event = device.read_one()
+        if event is None:
+            continue
         if event.type == 3:
             if event.code == 0:
                 data_collected[0] = event.value
