@@ -7,7 +7,7 @@ from pynput.mouse import Controller, Button
 path = "/dev/input/event8"
 tablet = [0, 0]
 tablet_size_physical = [6, 4]
-# top bottom left right
+
 area_pos = [80, 8.57]
 area_size = [30.47, 17.139375]
 
