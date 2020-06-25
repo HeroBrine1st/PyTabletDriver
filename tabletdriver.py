@@ -41,7 +41,6 @@ def map_to_display(x, y):
 
 def main():
     mouse2 = Controller()
-    mouse2.position
     data_collected = [1, 1]
     print("Running tabletdriver on device %s (%s)" % (path, device.name))
     print("Physical size: %sx%s" % tuple(tablet_size_physical))
