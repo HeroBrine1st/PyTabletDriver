@@ -1,16 +1,9 @@
 # АХТУНГ ТОЛЬКО ЛИНУКС
 # НА ВИНДЕ НЕ ЗАВЕДЕТСЯ
 # ВООБЩЕ
-import contextlib
-
 import Xlib.ext.xtest
 import Xlib.display
 display = Xlib.display.Display()
-
-@contextlib.contextmanager
-def display_manager():
-    yield display
-    display.flush()
 
 # Справочник кнопочек-хуёпочек
 #         ('unknown', None),
@@ -25,13 +18,13 @@ def display_manager():
 #             for i in range(8, 31)])
 
 def set_position(x, y):
-    with display_manager() as dm:
-        Xlib.ext.xtest.fake_input(dm, Xlib.X.MotionNotify, x=x, y=y)
+    Xlib.ext.xtest.fake_input(display, Xlib.X.MotionNotify, x=x, y=y)
+    display.flush()
 
 def press(button):
-    with display_manager() as dm:
-        Xlib.ext.xtest.fake_input(dm, Xlib.X.ButtonPress, button)
+    Xlib.ext.xtest.fake_input(display, Xlib.X.ButtonPress, button)
+    display.flush()
 
 def release(button):
-    with display_manager() as dm:
-        Xlib.ext.xtest.fake_input(dm, Xlib.X.ButtonRelease, button)
+    Xlib.ext.xtest.fake_input(display, Xlib.X.ButtonRelease, button)
+    display.flush()

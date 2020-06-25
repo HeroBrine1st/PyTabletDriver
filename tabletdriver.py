@@ -63,7 +63,8 @@ def main():
 
 if __name__ == '__main__':
     try:
-        main()
+        with device.grab_context():
+            main()
     except KeyboardInterrupt:
         print("Exiting")
         pass
