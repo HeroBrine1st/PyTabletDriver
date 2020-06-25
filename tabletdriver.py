@@ -14,7 +14,7 @@ tablet_size_physical = [tablet[0] / cap[3][0][1].resolution, tablet[1] / cap[3][
 display = pyautogui.size()
 area_size[1] = area_size[0] * (display.height / display.width)
 map_x = 1 / tablet[0] * tablet_size_physical[0]
-map_y = 1 / tablet[0] * tablet_size_physical[0]
+map_y = 1 / tablet[1] * tablet_size_physical[1]
 map_x_2 = 1 / area_size[0] * display.width
 map_y_2 = 1 / area_size[1] * display.height
 
@@ -34,8 +34,6 @@ def map_to_display(x, y):
     x = x - area_pos[0]
     y = y - area_pos[1]
     return int(x * map_x_2), int(y * map_y_2)
-
-
 
 def main():
     data_collected = [1, 1]
@@ -66,7 +64,10 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-    except Exception as e:
+    except KeyboardInterrupt:
+        print("Exiting")
+        pass
+    except BaseException:
         device.close()
-        raise e
+        raise
     device.close()
