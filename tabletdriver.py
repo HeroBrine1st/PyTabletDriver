@@ -25,31 +25,27 @@ map_y_2 = 1 / area_size[1] * display.height
 def map_to_display(x, y):
     x = x * map_x
     y = y * map_y
-    x_retraction = 0
-    y_retraction = 0
     if x < area_pos[0]:
         x = area_pos[0]
     if y < area_pos[1]:
         y = area_pos[1]
     if x > area_pos[0] + area_size[0]:
         x = area_pos[0] + area_size[0]
-        x_retraction = 1
     if y > area_pos[1] + area_size[1]:
         y = area_pos[1] + area_size[1]
-        y_retraction = 1
     x = x - area_pos[0]
     y = y - area_pos[1]
-    return int(x * map_x_2) - x_retraction, int(y * map_y_2) - y_retraction
+    return int(x * map_x_2), int(y * map_y_2)
 
 
 
 def main():
     mouse2 = Controller()
+    mouse2.position
     data_collected = [1, 1]
     print("Running tabletdriver on device %s (%s)" % (path, device.name))
     print("Physical size: %sx%s" % tuple(tablet_size_physical))
     print("System size: %sx%s" % tuple(tablet))
-    print(area_pos, area_size)
     while True:
         event = device.read_one()
         if event is None:
