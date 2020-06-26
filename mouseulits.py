@@ -28,3 +28,6 @@ def press(button):
 def release(button):
     Xlib.ext.xtest.fake_input(display, Xlib.X.ButtonRelease, button)
     display.flush()
+
+def size():
+    return display.screen().width_in_pixels, display.screen().height_in_pixels
