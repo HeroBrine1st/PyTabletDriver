@@ -10,28 +10,16 @@ wacom_area = [16000, 22094, 1714, 5140]
 wacom_size = [wacom_area[1] - wacom_area[0], wacom_area[3] - wacom_area[2]]
 device = InputDevice(path)
 cap = device.capabilities()
-tablet = [cap[3][0][1].max, cap[3][1][1].max]
 display = mouseulits.size()
 
 
-
-def map_to_display(x, y):
-    if x > wacom_area[1]:
-        x = wacom_area[1]
-    if y > wacom_area[3]:
-        y = wacom_area[3]
-    x = (x - wacom_area[0]) * display[0] // wacom_size[0]
-    y = (y - wacom_area[2]) * display[1] // wacom_size[1]
-    return x, y
-
 def main():
     print("Running tabletdriver on device %s (%s)" % (path, device.name))
-    print("System size: %sx%s" % tuple(tablet))
     uinput = UInput({
         1: [320, 330, 331, 332], # Без этого не работает. Не знаю, почему, это вроде бы EV_KEY
         3: [(0, AbsInfo(value=0, min=0, max=display[0], fuzz=0, flat=0, resolution=1)),
             (1, AbsInfo(value=0, min=0, max=display[1], fuzz=0, flat=0, resolution=1)),
-            (24, AbsInfo(value=0, min=0, max=8191, fuzz=0, flat=0, resolution=1))]
+            (24, AbsInfo(value=0, min=0, max=8191, fuzz=0, flat=0, resolution=0))]
     }, name="PyTabletDriver's Virtual Tablet")
     while True:
         event = device.read_one()
