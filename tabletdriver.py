@@ -1,55 +1,58 @@
-import evdev
+from evdev import UInput, InputDevice, AbsInfo
+from evdev.ecodes import *
 import mouseulits
 
-path = "/dev/input/event8"
+path = "/dev/input/event11"
 # top bottom left right
-area_pos = [80, 8.57]
-area_size = [30.47, 17.139375]
+wacom_area = [16000, 22094, 1714, 5140]
 
-device = evdev.InputDevice(path)
+
+wacom_size = [wacom_area[1] - wacom_area[0], wacom_area[3] - wacom_area[2]]
+device = InputDevice(path)
 cap = device.capabilities()
 tablet = [cap[3][0][1].max, cap[3][1][1].max]
-tablet_size_physical = [tablet[0] / cap[3][0][1].resolution, tablet[1] / cap[3][1][1].resolution]
 display = mouseulits.size()
-area_size[1] = area_size[0] * (display[1] / display[0])
-map_x = 1 / tablet[0] * tablet_size_physical[0]
-map_y = 1 / tablet[1] * tablet_size_physical[1]
-map_x_2 = 1 / area_size[0] * display[0]
-map_y_2 = 1 / area_size[1] * display[1]
 
 
 
 def map_to_display(x, y):
-    x = x * map_x
-    y = y * map_y
-    if x < area_pos[0]:
-        x = area_pos[0]
-    if y < area_pos[1]:
-        y = area_pos[1]
-    if x > area_pos[0] + area_size[0]:
-        x = area_pos[0] + area_size[0]
-    if y > area_pos[1] + area_size[1]:
-        y = area_pos[1] + area_size[1]
-    x = x - area_pos[0]
-    y = y - area_pos[1]
-    return int(x * map_x_2), int(y * map_y_2)
+    if x > wacom_area[1]:
+        x = wacom_area[1]
+    if y > wacom_area[3]:
+        y = wacom_area[3]
+    x = (x - wacom_area[0]) * display[0] // wacom_size[0]
+    y = (y - wacom_area[2]) * display[1] // wacom_size[1]
+    return x, y
 
 def main():
-    data_collected = [1, 1]
     print("Running tabletdriver on device %s (%s)" % (path, device.name))
-    print("Physical size: %sx%s" % tuple(tablet_size_physical))
     print("System size: %sx%s" % tuple(tablet))
+    uinput = UInput({
+        1: [320, 330, 331, 332], # Без этого не работает. Не знаю, почему, это вроде бы EV_KEY
+        3: [(0, AbsInfo(value=0, min=0, max=display[0], fuzz=0, flat=0, resolution=1)),
+            (1, AbsInfo(value=0, min=0, max=display[1], fuzz=0, flat=0, resolution=1)),
+            (24, AbsInfo(value=0, min=0, max=8191, fuzz=0, flat=0, resolution=1))]
+    }, name="PyTabletDriver's Virtual Tablet")
     while True:
         event = device.read_one()
         if event is None:
             continue
-        if event.type == 3:
-            if event.code == 0:
-                data_collected[0] = event.value
-            elif event.code == 1:
-                data_collected[1] = event.value
-            x, y = map_to_display(data_collected[0], data_collected[1])
-            mouseulits.set_position(x, y)
+        if event.type == EV_ABS:
+            if event.code == ABS_X:
+                x = event.value
+                if x > wacom_area[1]:
+                    x = wacom_area[1]
+                x = (x - wacom_area[0]) * display[0] // wacom_size[0]
+                uinput.write(EV_ABS, ABS_X, x)
+            elif event.code == ABS_Y:
+                y = event.value
+                if y > wacom_area[3]:
+                    y = wacom_area[3]
+                y = (y - wacom_area[2]) * display[1] // wacom_size[1]
+                uinput.write(EV_ABS, ABS_Y, y)
+            elif event.code == ABS_PRESSURE:
+                uinput.write(EV_ABS, ABS_PRESSURE, event.value)
+            uinput.syn()
         elif event.type == 1:
             if event.code in range(330, 333):
                 if event.value == 1:
