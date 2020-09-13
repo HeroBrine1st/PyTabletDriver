@@ -1,0 +1,5 @@
+# Place this file in ``/etc/udev/rules.d`` for running in user-space.
+# Then reboot or run ``sudo udevadm control --reload-rules && sudo udevadm trigger``
+# It's not the best solution, but better than launching by root
+
+KERNEL=="uinput", MODE="0666"
