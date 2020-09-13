@@ -8,6 +8,12 @@ Maybe I will create option for such distros so that driver will send event direc
 
 Work in progress.
 
+# Requirements
+
+* Linux
+* udev
+* xorg
+
 # Installing
 
 Disclaimer: I'm **not** responsible for any damages. You're doing this at your own risk.
