@@ -32,6 +32,6 @@ Disclaimer: I'm **not** responsible for any damages. You're doing this at your o
 # Future plans
 
 * Auto-searching for tablets
-* Option for not using virtual tablet (sending event directly to xorg)
+* Option for not use virtual tablet (send event directly to xorg)
 * GUI
 * Autostart and daemon process

@@ -90,6 +90,11 @@ def main():
     print("Running tabletdriver on device %s (%s)" % (device.path, device.name))
     cap = device.capabilities()
     display = mouseulits.size()
+    print("============================ DEBUG INFO ============================")
+    print(cap)
+    print(display)
+    print(device)
+    print("====================================================================")
     uinput = UInput({
         1: [320, 330, 331, 332], # Без этого не работает. Не знаю, почему, это вроде бы EV_KEY
         3: [(0, AbsInfo(value=0, min=0, max=display[0], fuzz=0, flat=0, resolution=1)),
