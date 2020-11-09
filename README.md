@@ -30,7 +30,7 @@ Disclaimer: I'm **not** responsible for any damages. You're doing this at your o
 4. Run file ``finddevices.py`` and get your tablet's path
     * ``True`` at the end of line explains device is tablet
     * For me it was ``/dev/input/event15 XP-PEN STAR G640 Pen True`` and path was ``/dev/input/event15``
-5. Create confif file (or enter commands directly to driver process standard input)
+5. Create config file (or enter commands directly to driver process standard input)
     * ``DEVICE <path>`` will set device for driver
     * ``AREA <left> <top> <right> <bottom>`` will set area
     * See example [here](https://github.com/HeroBrine1st/PyTabletDriver/blob/master/input.txt)
