@@ -16,12 +16,13 @@ display_size = (display.screen().width_in_pixels, display.screen().height_in_pix
 display_pos = (0, 0)
 area = (0, 0, 1, 1)
 area_size = (area[2] - area[0], area[3] - area[1])
+pressure_sensitivity = 0.0
 
 # ======================= #
 
 device: Optional[InputDevice] = None
 virtual_device: Optional[UInput] = None
-
+max_pressure = 1
 device_searcher_info = {"vendor": 0, "product": 0, "name": ""}
 
 monitor = Monitor.from_netlink(Context())
@@ -50,6 +51,8 @@ def update_device(new_device):
         print(" - Hover available")
     if BTN_TOUCH in cap[EV_KEY]:
         print(" - Has BTN_TOUCH feature - %s pressure steps" % (cap[3][2][1].max + 1))
+        global max_pressure
+        max_pressure = cap[3][2][1].max
     device = new_device
 
 def process_command(cmd: str):
@@ -88,6 +91,18 @@ def process_command(cmd: str):
             print("Invalid device")
             return
         update_device(new_device)
+    elif cmd == "PRESSURE":
+        global pressure_sensitivity
+        try:
+            if -2.0 <= float(args[0]) <= 2.0:
+                pressure_sensitivity = float(args[0])
+                print(f"Pressure {pressure_sensitivity} applied")
+            else:
+                raise ValueError
+        except ValueError:
+            print("Invalid argument")
+    else:
+        print("Invalid command")
 
 def main():
     global device
@@ -95,12 +110,14 @@ def main():
     global area
     global area_size
     while True:
-        if select.select([sys.stdin, ], [], [], 0)[0]:
-            for line in sys.stdin.read().splitlines(keepends=False):
+        r, _, _ = select.select([sys.stdin, device or monitor], [], [])
+        if sys.stdin in r:
+            for line in sys.stdin.readline().splitlines(keepends=False):
                 process_command(line)
-        if device is not None and virtual_device is not None:
+        if device in r and device is not None and virtual_device is not None:
             try:  # Faster than monitor.poll(timeout=0) then checking udev events
                 event = device.read_one()
+
                 if event is None:
                     continue
                 if event.type == EV_ABS:
@@ -117,7 +134,15 @@ def main():
                         y = (y - area[1]) * display_size[1] // area_size[1]
                         virtual_device.write(EV_ABS, ABS_Y, y)
                     elif event.code == ABS_PRESSURE:
-                        virtual_device.write(EV_ABS, ABS_PRESSURE, event.value)
+                        pressure = event.value
+                        if pressure_sensitivity is not 0.0:
+                            pressure = pressure / max_pressure
+                            if pressure_sensitivity > 0.0:
+                                pressure = 1 - (1 - pressure) ** (1 + pressure_sensitivity)
+                            else:
+                                pressure = pressure ** (1 - pressure_sensitivity)
+                            pressure = int(pressure * max_pressure)
+                        virtual_device.write(EV_ABS, ABS_PRESSURE, pressure)
                     virtual_device.syn()
                 elif event.type == EV_KEY:
                     virtual_device.write(EV_KEY, event.code, event.value)
@@ -130,8 +155,9 @@ def main():
                     device_searcher_info["name"] = device.name
                     device = None
                     virtual_device = None
-        else: # Wait for device connect
+        if monitor in r: # Wait for device connect
             d = monitor.poll(timeout=0)
+
             if d and d.action == "add" and d.device_node and d.device_node.startswith("/dev/input/event"): # Last check used to avoid ENOTTY
                 candidate = InputDevice(d.device_node)
                 if candidate.info.vendor == device_searcher_info["vendor"] and candidate.info.product == device_searcher_info["product"]\
