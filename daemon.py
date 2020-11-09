@@ -95,9 +95,9 @@ def main():
     global area
     global area_size
     while True:
-        # if select.select([sys.stdin, ], [], [], 0)[0]:
-        for line in sys.stdin.read().splitlines(keepends=False):
-            process_command(line)
+        if select.select([sys.stdin, ], [], [], 0)[0]:
+            for line in sys.stdin.read().splitlines(keepends=False):
+                process_command(line)
         if device is not None and virtual_device is not None:
             try:  # Faster than monitor.poll(timeout=0) then checking udev events
                 event = device.read_one()
@@ -140,6 +140,10 @@ def main():
 
 
 if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        with open(sys.argv[1]) as f:
+            for line in f.readlines():
+                process_command(line.rstrip("\n"))
     try:
         main()
     except KeyboardInterrupt:
