@@ -10,12 +10,13 @@ Work in progress.
 # Features
 
 * Custom tablet area
+* Auto-connecting if you plugged out and in tablet's cable
 
 # Requirements
 
 * Linux
 * udev
-* xorg
+* evdev
 
 # Installing
 
@@ -29,17 +30,14 @@ Disclaimer: I'm **not** responsible for any damages. You're doing this at your o
 4. Run file ``finddevices.py`` and get your tablet's path
     * ``True`` at the end of line explains device is tablet
     * For me it was ``/dev/input/event15 XP-PEN STAR G640 Pen True`` and path was ``/dev/input/event15``
-5. Run ``daemon.py`` with arguments
-    1. Tablet's path
-    2. Tablet area start X
-    3. Area start Y
-    4. Area end X
-    5. Area end Y
-    * Command example: ``python daemon.py /dev/input/event15 0 0 32000 18000``
-    * I didn't create autostart so you need to run driver manually.
+5. Create config file (or enter commands directly to driver process standard input)
+    * ``DEVICE <path>`` will set device for driver
+    * ``AREA <left> <top> <right> <bottom>`` will set area
+    * See example [here](https://github.com/HeroBrine1st/PyTabletDriver/blob/master/input.txt)
+6. Run ``daemon.py``
+    * You can provide config file as argument instead of entering commands
     
 # Future plans
 
-* Auto-searching for tablets
 * GUI
-* Autostart and daemon process
+* Autostart
