@@ -1,0 +1,2 @@
+DEVICE /dev/input/event15
+AREA 12000 1750 20000 6250

@@ -1,13 +1,12 @@
+import select
 import sys
-from typing import Union
+from errno import *
+from typing import Optional
 
 import Xlib.display
 from evdev import InputDevice, UInput, AbsInfo
 from evdev.ecodes import *
 from pyudev import Monitor, Context
-from errno import *
-
-
 
 display = Xlib.display.Display()
 
@@ -20,16 +19,14 @@ area_size = (area[2] - area[0], area[3] - area[1])
 
 # ======================= #
 
-device: Union[InputDevice, None] = None
-virtual_device: Union[UInput, None] = None
+device: Optional[InputDevice] = None
+virtual_device: Optional[UInput] = None
 
-device_searcher_info = {"vendor": 0, "product": 0}
+device_searcher_info = {"vendor": 0, "product": 0, "name": ""}
 
-context = Context()
-monitor = Monitor.from_netlink(context)
+monitor = Monitor.from_netlink(Context())
 monitor.filter_by(subsystem='input')
 monitor.start()
-monitor.poll()
 
 
 
@@ -46,13 +43,13 @@ def update_device(new_device):
     })
     print("Using device %s" % new_device.name)
     cap = new_device.capabilities()
-    print("Max X: %s\nMax Y: %s\n%s button(s)" %
+    print(" - Max X: %s\n - Max Y: %s\n - %s button(s)" %
           (cap[3][0][1].max, cap[3][1][1].max,
            len(list(filter(lambda key: key != BTN_TOOL_PEN and key != BTN_TOUCH, cap[EV_KEY])))))
     if BTN_TOOL_PEN in cap[EV_KEY]:
-        print("Hover available")
+        print(" - Hover available")
     if BTN_TOUCH in cap[EV_KEY]:
-        print("Has BTN_TOUCH feature - %s pressure steps" % (cap[3][2][1].max + 1))
+        print(" - Has BTN_TOUCH feature - %s pressure steps" % (cap[3][2][1].max + 1))
     device = new_device
 
 def process_command(cmd: str):
@@ -68,11 +65,14 @@ def process_command(cmd: str):
         global area
         global area_size
         try:
-            area_temp = tuple(map(int, cmd))
+            area_temp = tuple(map(int, args))
             area_size_temp = (area_temp[2] - area_temp[0], area_temp[3] - area_temp[1])
             if area_size[0] > 0 and area_size[1] > 0:
                 area = area_temp
                 area_size = area_size_temp
+                print("New area applied!")
+                print(" - %s" % " ".join(args))
+                print(f" - {area_size[0]}x{area_size[1]}")
             else:
                 print("Invalid area")
         except ValueError:
@@ -92,11 +92,14 @@ def process_command(cmd: str):
 def main():
     global device
     global virtual_device
-    device: Union[InputDevice, None]
-    virtual_device: Union[UInput, None]
+    global area
+    global area_size
     while True:
-        if device and virtual_device:
-            try:  # Faster than monitor.poll(timeout=0) and checking udev events
+        # if select.select([sys.stdin, ], [], [], 0)[0]:
+        for line in sys.stdin.read().splitlines(keepends=False):
+            process_command(line)
+        if device is not None and virtual_device is not None:
+            try:  # Faster than monitor.poll(timeout=0) then checking udev events
                 event = device.read_one()
                 if event is None:
                     continue
@@ -121,25 +124,29 @@ def main():
                     virtual_device.syn()
             except OSError as e:
                 if e.args[0] == ENODEV:
+                    print(f"Got disconnected from {device.name}, saving info and waiting.")
                     device_searcher_info["vendor"] = device.info.vendor
                     device_searcher_info["product"] = device.info.product
+                    device_searcher_info["name"] = device.name
                     device = None
                     virtual_device = None
         else: # Wait for device connect
             d = monitor.poll(timeout=0)
-            if d.device_node:
-                aspt = InputDevice(d.device_node)  # aspirant
-                if aspt.info.vendor == device_searcher_info["vendor"] and aspt.info.product == device_searcher_info["product"]:
-                    update_device(aspt)
+            if d and d.action == "add" and d.device_node and d.device_node.startswith("/dev/input/event"): # Last check used to avoid ENOTTY
+                candidate = InputDevice(d.device_node)
+                if candidate.info.vendor == device_searcher_info["vendor"] and candidate.info.product == device_searcher_info["product"]\
+                        and candidate.name == device_searcher_info["name"]:
+                    update_device(candidate)
 
 
 if __name__ == '__main__':
-    with device.grab_context():
-        try:
-            main()
-        except KeyboardInterrupt:
-            print("Exit")
-        except BaseException:
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("Exit")
+    except BaseException:
+        raise
+    finally:
+        print("Closing device")
+        if device:
             device.close()
-            raise
-    device.close()
