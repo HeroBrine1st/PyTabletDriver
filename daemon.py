@@ -135,7 +135,7 @@ def main():
                         virtual_device.write(EV_ABS, ABS_Y, y)
                     elif event.code == ABS_PRESSURE:
                         pressure = event.value
-                        if pressure_sensitivity is not 0.0:
+                        if pressure_sensitivity is not 0.0: # TODO странная херня, TabletDriver на винде по-другому работает, хотя алгоритм ровно тот же
                             pressure = pressure / max_pressure
                             if pressure_sensitivity > 0.0:
                                 pressure = 1 - (1 - pressure) ** (1 + pressure_sensitivity)
