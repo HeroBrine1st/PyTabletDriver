@@ -151,6 +151,6 @@ if __name__ == '__main__':
     except BaseException:
         raise
     finally:
-        print("Closing device")
         if device:
+            print("Closing device")
             device.close()
