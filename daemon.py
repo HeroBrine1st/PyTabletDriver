@@ -133,13 +133,11 @@ def process_command(cmd: str):
         key_mapping[original] = replace
     else:
         print("Invalid command")
-temp = 0
 def main():
     global device
     global virtual_device
     global area
     global area_size
-    global temp
     while True:
         r, _, _ = select.select([sys.stdin, device or monitor], [], [])
         if sys.stdin in r:
@@ -172,7 +170,6 @@ def main():
                             else:
                                 pressure = pressure ** (1 - pressure_sensitivity)
                             pressure = math.ceil(pressure * max_pressure)
-                        temp = pressure
                         virtual_device.write(EV_ABS, ABS_PRESSURE, pressure)
                     virtual_device.syn()
                 elif event.type == EV_KEY:
