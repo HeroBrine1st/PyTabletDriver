@@ -1,3 +1,4 @@
+import math
 import select
 import sys
 from errno import *
@@ -17,6 +18,7 @@ display_pos = (0, 0)
 area = (0, 0, 1, 1)
 area_size = (area[2] - area[0], area[3] - area[1])
 pressure_sensitivity = 0.0
+key_mapping = {}
 
 # ======================= #
 
@@ -34,6 +36,8 @@ monitor.start()
 def update_device(new_device):
     global device
     global virtual_device
+    if device is not None:
+        device.ungrab()
     new_device.grab() # Prevent xorg from overriding cursor pos
     cap = new_device.capabilities()
     virtual_device = UInput({
@@ -42,6 +46,8 @@ def update_device(new_device):
                  (1, AbsInfo(value=0, min=0, max=display_size[1], fuzz=0, flat=0, resolution=1)),
                  (24, AbsInfo(value=0, min=0, max=cap[EV_ABS][2][1].max, fuzz=0, flat=0, resolution=0))]
     })
+    for key in cap[EV_KEY]:
+        key_mapping[key] = key
     print("Using device %s" % new_device.name)
     cap = new_device.capabilities()
     print(" - Max X: %s\n - Max Y: %s\n - %s button(s)" %
@@ -97,27 +103,51 @@ def process_command(cmd: str):
             if -2.0 <= float(args[0]) <= 2.0:
                 pressure_sensitivity = float(args[0])
                 print(f"Pressure {pressure_sensitivity} applied")
+                if pressure_sensitivity < 0:
+                    print("You may have troubles with left mouse button with low pressure sensitivity.")
+                    print("Just press harder if you want to press LMB")
             else:
                 raise ValueError
         except ValueError:
             print("Invalid argument")
+    elif cmd == "KEY":
+        if len(args) != 2:
+            print("Invalid arguments")
+            return
+        try:
+            original = int(args[0])
+        except ValueError:
+            try:
+                original = ecodes[args[0]]
+            except KeyError:
+                print("Invalid argument ORIGINAL")
+                return
+        try:
+            replace = int(args[1])
+        except ValueError:
+            try:
+                replace = ecodes[args[1]]
+            except KeyError:
+                print("Invalid argument REPLACE")
+                return
+        key_mapping[original] = replace
     else:
         print("Invalid command")
-
+temp = 0
 def main():
     global device
     global virtual_device
     global area
     global area_size
+    global temp
     while True:
         r, _, _ = select.select([sys.stdin, device or monitor], [], [])
         if sys.stdin in r:
             for line in sys.stdin.readline().splitlines(keepends=False):
                 process_command(line)
         if device in r and device is not None and virtual_device is not None:
-            try:  # Faster than monitor.poll(timeout=0) then checking udev events
+            try:  # When device disconnected a event dispatching, so try-except is necessary
                 event = device.read_one()
-
                 if event is None:
                     continue
                 if event.type == EV_ABS:
@@ -135,18 +165,21 @@ def main():
                         virtual_device.write(EV_ABS, ABS_Y, y)
                     elif event.code == ABS_PRESSURE:
                         pressure = event.value
-                        if pressure_sensitivity is not 0.0: # TODO странная херня, TabletDriver на винде по-другому работает, хотя алгоритм ровно тот же
+                        if pressure_sensitivity is not 0.0:
                             pressure = pressure / max_pressure
                             if pressure_sensitivity > 0.0:
                                 pressure = 1 - (1 - pressure) ** (1 + pressure_sensitivity)
                             else:
                                 pressure = pressure ** (1 - pressure_sensitivity)
-                            pressure = int(pressure * max_pressure)
+                            pressure = math.ceil(pressure * max_pressure)
+                        temp = pressure
                         virtual_device.write(EV_ABS, ABS_PRESSURE, pressure)
                     virtual_device.syn()
                 elif event.type == EV_KEY:
-                    virtual_device.write(EV_KEY, event.code, event.value)
+                    # key_mapping has all necessary keys
+                    virtual_device.write(EV_KEY, key_mapping[event.code], event.value)
                     virtual_device.syn()
+
             except OSError as e:
                 if e.args[0] == ENODEV:
                     print(f"Got disconnected from {device.name}, saving info and waiting.")
@@ -155,6 +188,8 @@ def main():
                     device_searcher_info["name"] = device.name
                     device = None
                     virtual_device = None
+                else:
+                    raise
         if monitor in r: # Wait for device connect
             d = monitor.poll(timeout=0)
 

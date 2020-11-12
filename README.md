@@ -33,7 +33,7 @@ Disclaimer: I'm **not** responsible for any damages. You're doing this at your o
 5. Create config file (or enter commands directly to driver process standard input)
     * ``DEVICE <path>`` will set device for driver
     * ``AREA <left> <top> <right> <bottom>`` will set area
-    * See example [here](https://github.com/HeroBrine1st/PyTabletDriver/blob/master/input.txt)
+    * See example [here](https://github.com/HeroBrine1st/PyTabletDriver/blob/master/test.txt)
 6. Run ``daemon.py``
     * You can provide config file as argument instead of entering commands
     
