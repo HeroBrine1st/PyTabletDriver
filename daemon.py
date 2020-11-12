@@ -38,6 +38,10 @@ def update_device(new_device):
     global virtual_device
     if device is not None:
         device.ungrab()
+        device.close()
+        device = None
+        virtual_device.close()
+        virtual_device = None
     new_device.grab() # Prevent xorg from overriding cursor pos
     cap = new_device.capabilities()
     virtual_device = UInput({
