@@ -12,6 +12,12 @@ Work in progress.
 * Custom tablet area
 * Auto-connecting if you plugged out and in tablet's cable
 
+# Known issues
+
+* If pressure sensitivity is low xorg is ignoring touching a tablet until you pressed harder
+  * In other words you need press harder if you want to use interface, otherwise xorg will ignore your touch.
+  * Solution: unknown
+
 # Requirements
 
 * Linux
