@@ -15,7 +15,7 @@ Work in progress.
 # Known issues
 
 * If pressure sensitivity is low xorg is ignoring touching a tablet until you pressed harder
-  * In other words you need press harder if you want to use interface, otherwise xorg will ignore your touch.
+  * In other words you need to press harder if you want to use interface, otherwise xorg will ignore your touch.
   * Solution: unknown
 
 # Requirements
