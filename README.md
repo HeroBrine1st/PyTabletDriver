@@ -1,3 +1,6 @@
+# This project is discontinued
+I stopped using linux so I don't need this project anymore. Maybe I'll damn windows again and return to linux, but not in near future.
+
 # PyTabletDriver
 XP-PEN Star G640 driver written in python. 
 
